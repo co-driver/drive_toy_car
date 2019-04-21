@@ -1,0 +1,2 @@
+float32 throttle_pos
+float32 steer_pos
