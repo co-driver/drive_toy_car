@@ -3,7 +3,7 @@
 #include <termios.h>
 #include <stdio.h>
 
-#include "cheyou_toy_car/MsgDriverCmd.h"
+#include "drive_toy_car/MsgDriverCmd.h"
 
 #define KEYCODE_R 0x43 
 #define KEYCODE_L 0x44
@@ -46,7 +46,7 @@ TeleopToyCar::TeleopToyCar():
   on_moving(false)
 {
 
-  car_cmd_pub_ = nh_.advertise<cheyou_toy_car::MsgDriverCmd>("/car_cmd", 1);
+  car_cmd_pub_ = nh_.advertise<drive_toy_car::MsgDriverCmd>("/car_cmd", 1);
 }
 
 int kfd = 0;
@@ -79,7 +79,7 @@ void TeleopToyCar::keyLoop()
 {
   char c;
   bool dirty=false;
-  cheyou_toy_car::MsgDriverCmd drive_cmd;
+  drive_toy_car::MsgDriverCmd drive_cmd;
 
 
   // get the console in raw mode                                                              
