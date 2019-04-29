@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   roscpp
   std_msgs
+  carla_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -72,6 +73,7 @@ add_message_files(
 generate_messages(
   DEPENDENCIES
   std_msgs
+  carla_msgs
 )
 
 ################################################
@@ -200,7 +202,7 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_executable(teleop_toy_car_key src/test/teleop_toy_car_key.cpp)
-target_link_libraries(teleop_toy_car_key ${catkin_LIBRARIES})
-add_dependencies(teleop_toy_car_key drive_toy_car_generate_messages_cpp)
+add_executable(teleop_toy_car src/teleop_toy_car.cpp)
+target_link_libraries(teleop_toy_car ${catkin_LIBRARIES})
+add_dependencies(teleop_toy_car drive_toy_car_generate_messages_cpp)
 
