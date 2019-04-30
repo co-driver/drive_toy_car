@@ -15,12 +15,14 @@
 #define KEYCODE_q 0x71
 #define KEYCODE_Q 0x51    // 设置车辆的移动方向：前景或者后退
 #define KEYCODE_SP 0x20   // 停止、启动车辆
+#define KEYCODE_M  0x4d
+#define KEYCODE_m  0x6d
 
-#define STOP_THROTTLE 5.1  //如果油门开度低于这个值，玩具车将停止运动
+#define STOP_THROTTLE 6.0  //如果油门开度低于这个值，玩具车将停止运动
 #define MAX_THROTTLE  15.0  //允许的最大油门开度，防止车辆速度过快
-#define START_THROTTLE 9.0 //这辆玩具车从静止状态启动的时候，必须给出大于这个油门开度的值，才能够启动
+#define START_THROTTLE 9.5 //这辆玩具车从静止状态启动的时候，必须给出大于这个油门开度的值，才能够启动
 #define MAX_STEER 100.0      //允许的最大的方向转角
-#define DUR_TIME 0.2        // 启动后油门的持续时间，之后，油门将自动降为停车油门值STOP_THROTTLE
+#define DUR_TIME 0.1        // 启动后油门的持续时间，之后，油门将自动降为停车油门值STOP_THROTTLE
 
 
 class TeleopToyCar
@@ -42,8 +44,8 @@ private:
 TeleopToyCar::TeleopToyCar():
   throttle_(0),
   steer_(0),
-  t_step(0.5),
-  s_step(6),
+  t_step(0.1),
+  s_step(5),
   forward_moving(true),
   on_moving(false)
 {
@@ -123,6 +125,12 @@ void TeleopToyCar::keyLoop()
         steer_ = std::min(steer_,MAX_STEER);
         dirty = true;
         break;
+      case KEYCODE_M:
+      case KEYCODE_m:
+        ROS_DEBUG("Middle");
+        steer_ = 0.0;
+        dirty = true;      
+
       case KEYCODE_U:
         ROS_DEBUG("UP");
         if(!on_moving)
@@ -166,22 +174,22 @@ void TeleopToyCar::keyLoop()
                 //从静止状态启动车辆的时候，必须给一个大的油门绝对值，否则车辆不能启动.启动后，自动将油门降为最低，这样做是担心人为控制来不及处理
           if(forward_moving){
             throttle_ = START_THROTTLE;
-            vehicle_status.control.throttle = throttle_;
+            vehicle_status.control.throttle = throttle_/100.0;
             vehicle_status_pub_.publish(vehicle_status);   
             sleep(DUR_TIME);
 
             throttle_ = STOP_THROTTLE;
-            vehicle_status.control.throttle = throttle_;
+            vehicle_status.control.throttle = throttle_/100.0;
             vehicle_status_pub_.publish(vehicle_status);
           }
           else{
             throttle_ =-START_THROTTLE;
-            vehicle_status.control.throttle = throttle_;
+            vehicle_status.control.throttle = throttle_/100.0;
             vehicle_status_pub_.publish(vehicle_status);             
             sleep(DUR_TIME);
 
             throttle_ = -STOP_THROTTLE;     
-            vehicle_status.control.throttle = throttle_;
+            vehicle_status.control.throttle = throttle_/100.0;
             vehicle_status_pub_.publish(vehicle_status);                        
           }  
           puts("Car Started");
@@ -203,8 +211,8 @@ void TeleopToyCar::keyLoop()
 
     }
    
-    vehicle_status.control.throttle = throttle_;
-    vehicle_status.control.steer = steer_;
+    vehicle_status.control.throttle = throttle_/100.0;
+    vehicle_status.control.steer = steer_/100.0;
 
     if(dirty ==true)
     {
