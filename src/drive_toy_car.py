@@ -1,10 +1,5 @@
 #!/usr/bin/env python
 import rospy
-import math
-import numpy
-import threading
-
-
 import Adafruit_PCA9685
 from carla_msgs.msg import CarlaEgoVehicleControl
 from carla_msgs.msg import CarlaEgoVehicleStatus
@@ -23,6 +18,10 @@ class _RC_Car_Driver(object):
     _PWM_FREQ = 100
 
     def __init__(self):           
+	
+	rospy.init_node("rc_car_driver")
+        rospy.Subscriber("/carla/ego_vehicle/vehicle_status",CarlaEgoVehicleStatus,self.callback)
+
         # Command timeout
         try:
             self._cmd_timeout = float(rospy.get_param("~cmd_timeout",
@@ -36,7 +35,7 @@ class _RC_Car_Driver(object):
         try:
             self._pwm_frequency = float(rospy.get_param("~pwm_requency",
                                              self._PWM_FREQ))
-            if self._pwm_frequency < 0.0
+            if self._pwm_frequency < 0.0:
                 raise ValueError()
         except:
             rospy.logwarn("The specified pwm frequency is invalid. "
@@ -71,11 +70,13 @@ class _RC_Car_Driver(object):
         self._pwm = Adafruit_PCA9685.PCA9685() 
         self._pwm.set_pwm_freq(self._pwm_frequency) 
 
-        rospy.init_node("rc_car_driver")
-        rospy.Subscriber("/carla/ego_vehicle/vehicle_status",CarlaEgoVehicleStatus,callback)
         # _last_cmd_time is the time at which the most recent 
         # driving command was received.        
         self._last_cmd_time = rospy.get_time()
+
+	self._throttle = 0.0
+	self._steer = 0.0
+
 
     def callback(self,VehicleStatus):
         t = rospy.get_time()
@@ -86,23 +87,32 @@ class _RC_Car_Driver(object):
             t - self._last_cmd_time > self._cmd_timeout):
             # Too much time has elapsed since the last command. Stop the
             # vehicle.
-            throttle = 0.0
-            steer = 0.0
+            self._throttle = 0.0
+            self._steer = 0.0
         elif delta_t > 0.0:
-            throttle=VehicleStatus.control.throttle
-            steer=VehicleStatus.control.steer
+            self._throttle=VehicleStatus.control.throttle
+            self._steer=VehicleStatus.control.steer
+	else:
+	    pass
         
-        rospy.loginfo(rospy.get_caller_id() + " throttle=%d steer=%d", throttle,steer)
-        throttle_pulse_width=fix(2.048*throttle+614.6)
-        steer_pulse_width=fix(2.048*steer+614.6)    
+
+
+	rospy.loginfo(rospy.get_caller_id() + " self._throttle=%f self._steer=%f", self._throttle,self._steer)
+	throttle,steer = self.cmd_calibration(self._throttle,self._steer)
+        rospy.loginfo(rospy.get_caller_id() + " throttle=%f steer=%f", throttle,steer)
+
+        throttle_pulse_width=int(204.8*throttle+614.6)
+        steer_pulse_width=int(204.8*steer+614.6)    
         rospy.loginfo(rospy.get_caller_id() + " throttle_pulse_width=%d steer_pulse_width=%d",\
             throttle_pulse_width,steer_pulse_width)                                              
         self._pwm.set_pwm(self._throttle_channel,0, throttle_pulse_width) 
         self._pwm.set_pwm(self._steer_channel,0, steer_pulse_width)        
 
+    def cmd_calibration(self,throttle,steer):
+	return throttle,steer
+
     def spin(self):
-        while not rospy.is_shuttdown:
-            rospy.spin()
+	rospy.spin()
 
 if __name__ == '__main__':
     driver = _RC_Car_Driver()
